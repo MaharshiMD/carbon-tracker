@@ -129,6 +129,56 @@ function fileToGenerativePart(buffer, mimeType) {
   };
 }
 
+// Cascading Gemini Caller (Tries Gemini 2.5 Flash, cascades to Gemini 3.1 Flash Lite)
+async function callGeminiCascade(apiKey, options = {}) {
+  const { prompt, systemInstruction, history, base64Image, mimeType } = options;
+  const genAI = new GoogleGenerativeAI(apiKey);
+  
+  const modelsToTry = ['gemini-2.5-flash', 'gemini-3.1-flash-lite'];
+  let lastError = null;
+
+  for (const modelName of modelsToTry) {
+    try {
+      const modelConfig = { model: modelName };
+      if (systemInstruction) {
+        modelConfig.systemInstruction = systemInstruction;
+      }
+      
+      const model = genAI.getGenerativeModel(modelConfig);
+      let responseText = '';
+
+      if (history && history.length > 0) {
+        // Chat mode
+        const geminiHistory = history.map(msg => ({
+          role: msg.sender === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.text }]
+        }));
+        const chat = model.startChat({ history: geminiHistory });
+        const result = await chat.sendMessage(prompt);
+        responseText = result.response.text();
+      } else if (base64Image && mimeType) {
+        // Multi-modal mode
+        const buffer = Buffer.from(base64Image.split(",")[1] || base64Image, 'base64');
+        const imagePart = fileToGenerativePart(buffer, mimeType);
+        const result = await model.generateContent([prompt, imagePart]);
+        responseText = result.response.text();
+      } else {
+        // Text-only mode
+        const result = await model.generateContent(prompt);
+        responseText = result.response.text();
+      }
+
+      console.log(`Gemini Query successfully resolved by model: ${modelName}`);
+      return { text: responseText, modelUsed: modelName };
+    } catch (e) {
+      console.warn(`Gemini Model ${modelName} failed cascade check:`, e.message);
+      lastError = e;
+    }
+  }
+
+  throw lastError || new Error('All model attempts in cascade failed.');
+}
+
 // @route   POST /api/ai/insights
 // @desc    Securely query Gemini API with chat history and metrics (EcoCoach)
 router.post('/insights', authMiddleware, async (req, res) => {
@@ -146,7 +196,6 @@ router.post('/insights', authMiddleware, async (req, res) => {
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
     const systemPrompt = `
 You are EcoCoach, a friendly, extremely knowledgeable sustainability bot.
 You analyze the user's carbon metrics:
@@ -158,20 +207,13 @@ You analyze the user's carbon metrics:
 Provide actionable, encouraging, and exact advice based on these numbers. Respond in clean HTML tags (<p>, <ul>, <li>, <strong>). Do not use markdown. Keep details concise and under 3 paragraphs.
 `;
 
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-3.1-flash-lite',
-      systemInstruction: systemPrompt
+    const cascadeResult = await callGeminiCascade(apiKey, {
+      prompt: question || 'Give me my top carbon insights.',
+      systemInstruction: systemPrompt,
+      history
     });
 
-    const geminiHistory = history.map(msg => ({
-      role: msg.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.text }]
-    }));
-
-    const chat = model.startChat({ history: geminiHistory });
-    const result = await chat.sendMessage(question || 'Give me my top carbon insights.');
-    const responseText = result.response.text();
-    res.json({ response: responseText, offline: false });
+    res.json({ response: cascadeResult.text, offline: false, model: cascadeResult.modelUsed });
   } catch (err) {
     console.error('Gemini Insights API error:', err);
     const fallback = getFallbackAdvice(question, sliders, totalCo2, breakdown);
@@ -194,12 +236,6 @@ router.post('/ocr', authMiddleware, async (req, res) => {
   // If Gemini API Key is available and a real image is sent, analyze it
   if (apiKey && apiKey.trim() !== '' && base64Image) {
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
-
-      const buffer = Buffer.from(base64Image.split(",")[1], 'base64');
-      const imagePart = fileToGenerativePart(buffer, "image/png");
-
       const prompt = `
 Analyze this receipt/bill image. Identify:
 1. The type of bill (Fuel, Electricity, Food, Shopping).
@@ -208,9 +244,12 @@ Analyze this receipt/bill image. Identify:
 Respond ONLY in JSON format like this:
 { "type": "Electricity", "quantity": 180, "unit": "kWh", "cost": 45.50, "items": ["Grid Electricity Billing"] }
 `;
-
-      const result = await model.generateContent([prompt, imagePart]);
-      textResult = result.response.text();
+      const cascadeResult = await callGeminiCascade(apiKey, {
+        prompt,
+        base64Image,
+        mimeType: 'image/png'
+      });
+      textResult = cascadeResult.text;
     } catch (e) {
       console.error("Gemini OCR error, falling back to mock parser:", e.message);
     }
@@ -220,7 +259,6 @@ Respond ONLY in JSON format like this:
   try {
     let parsedData = {};
     if (textResult) {
-      // clean json
       const cleaned = textResult.replace(/```json|```/gi, '').trim();
       parsedData = JSON.parse(cleaned);
     } else {
@@ -236,16 +274,15 @@ Respond ONLY in JSON format like this:
       }
     }
 
-    // Convert extracted data into carbon emissions (tonnes)
     let emissions = 0;
     if (parsedData.type === 'Fuel' || receiptType === 'Fuel') {
-      emissions = (parsedData.quantity || 45) * 0.0023; // 2.3 kg per litre
+      emissions = (parsedData.quantity || 45) * 0.0023; 
     } else if (parsedData.type === 'Electricity' || receiptType === 'Electricity') {
-      emissions = (parsedData.quantity || 280) * 0.00082; // 0.82 kg per kWh
+      emissions = (parsedData.quantity || 280) * 0.00082; 
     } else if (parsedData.type === 'Food' || receiptType === 'Food') {
-      emissions = (parsedData.quantity || 3) * 0.015; // beef/meat meals
+      emissions = (parsedData.quantity || 3) * 0.015; 
     } else {
-      emissions = (parsedData.quantity || 4) * 0.012; // Shopping parcels
+      emissions = (parsedData.quantity || 4) * 0.012; 
     }
     emissions = parseFloat(emissions.toFixed(3));
 
@@ -256,7 +293,6 @@ Respond ONLY in JSON format like this:
       emissions
     });
 
-    // Automatically add this as a carbon activity item!
     await db.addActivity(req.user.id, {
       date: new Date().toISOString().substring(0, 7),
       type: receiptType.toLowerCase() === 'fuel' ? 'transportation' : receiptType.toLowerCase() === 'electricity' ? 'utilities' : receiptType.toLowerCase(),
@@ -287,20 +323,17 @@ router.post('/vision', authMiddleware, async (req, res) => {
 
   if (apiKey && apiKey.trim() !== '' && base64Image) {
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
-
-      const buffer = Buffer.from(base64Image.split(",")[1], 'base64');
-      const imagePart = fileToGenerativePart(buffer, "image/png");
-
       const prompt = `
 Analyze this picture of an item (${itemCategory}). Identify what object/meal/appliance it is, estimate its lifecycle carbon emissions impact (in kg CO2), and suggest a green alternative.
 Respond strictly in JSON format:
 { "identifiedObject": "Object Name", "carbonImpactKg": 12.5, "alternative": "Green Alternative Suggestion", "confidenceScore": 92 }
 `;
-
-      const result = await model.generateContent([prompt, imagePart]);
-      textResult = result.response.text();
+      const cascadeResult = await callGeminiCascade(apiKey, {
+        prompt,
+        base64Image,
+        mimeType: 'image/png'
+      });
+      textResult = cascadeResult.text;
     } catch (e) {
       console.error("Gemini CV error, using mock parser:", e.message);
     }
@@ -312,7 +345,6 @@ Respond strictly in JSON format:
       const cleaned = textResult.replace(/```json|```/gi, '').trim();
       parsed = JSON.parse(cleaned);
     } else {
-      // Mock computer vision results
       if (itemCategory === 'Meals') {
         parsed = { identifiedObject: 'Double Beef Burger & Fries', carbonImpactKg: 6.8, alternative: 'Plant-based soy burger (saves 85% emissions)', confidenceScore: 94 };
       } else if (itemCategory === 'Vehicles') {
@@ -326,16 +358,14 @@ Respond strictly in JSON format:
       }
     }
 
-    // Award 40 XP for uploading vision scans
     await db.updateLeaderboard(req.user.id, req.user.name, 40, 1, 0);
 
-    // Save activity
     await db.addActivity(req.user.id, {
       date: new Date().toISOString().substring(0, 7),
       type: itemCategory === 'Meals' ? 'food' : itemCategory === 'Vehicles' ? 'transportation' : 'shopping',
       subType: itemCategory.toLowerCase().replace(' ', '_'),
       value: 1,
-      emissions: parsed.carbonImpactKg * 0.001, // convert kg to tonnes
+      emissions: parsed.carbonImpactKg * 0.001, 
       description: `CV Carbon Scan: Identified ${parsed.identifiedObject}`
     });
 
@@ -358,8 +388,6 @@ Respond strictly in JSON format:
 router.get('/twin', authMiddleware, async (req, res) => {
   try {
     const profile = await db.getCarbonProfile(req.user.id);
-    
-    // Generate AI twin representation status details
     let avatarState = 'healthy_green';
     let summaryText = '';
     
@@ -399,7 +427,6 @@ router.post('/future-earth', authMiddleware, async (req, res) => {
 
   if (apiKey && apiKey.trim() !== '' && apiKey !== 'YOUR_GEMINI_API_KEY') {
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
       const prompt = `
 Generate a narrative warning / positive projection describing a city environment in 5, 10, and 20 years if a person maintains a carbon footprint of ${fp} tonnes CO2/yr.
 Keep descriptions vivid, highlighting forest cover, temperature increases, air quality, and financial strain. Respond strictly in JSON structure:
@@ -410,17 +437,13 @@ Keep descriptions vivid, highlighting forest cover, temperature increases, air q
   "globalTempRise": 1.2
 }
 `;
-      const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-      const cleaned = text.replace(/```json|```/gi, '').trim();
-      return res.json(JSON.parse(cleaned));
+      const cascadeResult = await callGeminiCascade(apiKey, { prompt });
+      return res.json(JSON.parse(cascadeResult.text.replace(/```json|```/gi, '').trim()));
     } catch (e) {
       console.error("Gemini Future Earth error, falling back to local simulation:", e.message);
     }
   }
 
-  // Fallback simulator text
   let y5 = '', y10 = '', y20 = '', temp = 1.1;
   if (fp < 2.0) {
     y5 = 'Your city is breathable and vibrant. Clean solar grids have slashed summer cooling costs by 30%.';
