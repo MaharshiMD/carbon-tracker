@@ -52,6 +52,7 @@ export default function App() {
   const [aiQuestion, setAiQuestion] = useState('');
   const [chatMessages, setChatMessages] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
+  const askAiRef = React.useRef(null);
 
   // Travel Log
   const [travelLogs, setTravelLogs] = useState([]);
@@ -126,6 +127,23 @@ export default function App() {
       ]);
     }
   }, [user]);
+
+  // Sync askAi callback to prevent stale closures in global scope
+  useEffect(() => {
+    askAiRef.current = askAi;
+  });
+
+  // Expose askAi globally for click handlers inside chat bubbles
+  useEffect(() => {
+    window.askAi = (q) => {
+      if (askAiRef.current) {
+        askAiRef.current(q);
+      }
+    };
+    return () => {
+      delete window.askAi;
+    };
+  }, []);
 
   // Recalculate carbon footprint locally as sliders or travel logs change
   useEffect(() => {
@@ -482,10 +500,10 @@ export default function App() {
       if (res.ok) {
         setChatMessages(prev => [...prev, { sender: 'ai', text: data.response }]);
       } else {
-        setChatMessages(prev => [...prev, { sender: 'ai', text: `<p style="color:var(--coral);">EcoCoach was unable to load details.</p>` }]);
+        setChatMessages(prev => [...prev, { sender: 'ai', text: `<p>Advanced analysis is temporarily unavailable. Based on your available data, here are some recommendations.</p><p>Please review your energy and transit levels on the dashboard or try again in a few moments.</p>` }]);
       }
     } catch (err) {
-      setChatMessages(prev => [...prev, { sender: 'ai', text: `<p style="color:var(--coral);">Network disconnect with EcoCoach.</p>` }]);
+      setChatMessages(prev => [...prev, { sender: 'ai', text: `<p>Advanced analysis is temporarily unavailable. Based on your available data, here are some recommendations.</p><p>Please check your network connection and try again.</p>` }]);
     } finally {
       setAiLoading(false);
     }

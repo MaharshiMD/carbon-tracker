@@ -10,50 +10,188 @@ const RECYCLE_LABELS = ['None', 'Low', 'Medium', 'High'];
 // Fallback Rule-based engine if Gemini key is offline or missing
 function getFallbackAdvice(question, sliders, totalCo2, breakdown) {
   const q = (question || '').toLowerCase();
-  const cats = Object.entries(breakdown).sort((a, b) => b[1] - a[1]);
-  const primaryCat = cats[0][0];
-  const primaryVal = cats[0][1];
+  const cats = Object.entries(breakdown || {}).sort((a, b) => b[1] - a[1]);
+  const primaryCat = cats.length > 0 ? cats[0][0] : 'energy';
+  const primaryVal = cats.length > 0 ? cats[0][1] : 0;
 
-  let html = `<h4>EcoCoach Advisor (Smart Assistant)</h4>`;
+  const carKm = sliders.carKm || 150;
+  const electricityKwh = sliders.electricityKwh || 250;
+  const meatMeals = sliders.meatMeals || 7;
+  const shopCount = sliders.shopCount || 5;
+  const recycleRatio = sliders.recycleRatio || 1;
 
-  if (q.includes('30-day') || q.includes('calendar') || q.includes('plan')) {
-    html += `<p>Here is your personalized <strong>30-Day Carbon Reduction Plan</strong> tailored to your ${totalCo2}t footprint:</p>`;
+  let html = '';
+
+  if (q.includes('30-day') || q.includes('7-day') || q.includes('90-day') || q.includes('calendar') || q.includes('plan')) {
+    html += `<h4>EcoCoach 30-Day Reduction Calendar Action Plan</h4>`;
+    html += `<p>Based on your profile, here is a structured timeline to reduce your carbon footprint of <strong>${totalCo2} tonnes CO₂/year</strong>:</p>`;
     html += `<ul>`;
-    html += `<li><strong>Days 1-7 (Easy Wins):</strong> Retrofit your home with LED lights and unplug standby devices. Based on your current ${sliders.electricityKwh} kWh/mo consumption, this shaves off ~15 kWh ($9 saved & 12.3 kg CO₂ offset) this month.</li>`;
+    html += `<li><strong>Days 1-7 (Quick Wins):</strong> Replace incandescent bulbs with LEDs. Swapping lighting saves ~15% on electricity. Difficulty: Easy. Savings: ~${Math.round(electricityKwh * 0.15)} kWh/mo (~$6/mo saved, 150 kg CO₂/yr offset).</li>`;
     if (primaryCat === 'transport') {
-      html += `<li><strong>Days 8-15 (Commuting Habits):</strong> Substitute 3 gasoline car trips with public transit or walking. With your ${sliders.carKm} km/week driving rate, this saves approximately ${Math.round(sliders.carKm * 0.17 * 0.3)} kg CO₂ weekly.</li>`;
+      html += `<li><strong>Days 8-15 (Commuter Focus):</strong> Substitute 3 driving trips with public transit or walking. Your weekly distance of ${carKm} km gasoline driving emits significant carbon. Difficulty: Medium. Savings: ~${Math.round(carKm * 52 * 0.17 * 0.3)} kg CO₂.</li>`;
     } else if (primaryCat === 'energy') {
-      html += `<li><strong>Days 8-15 (Utility Check):</strong> Lower your water heater thermostat to 120°F and limit laundry wash runs. This cuts your energy usage by up to 10% next month.</li>`;
+      html += `<li><strong>Days 8-15 (Utility Audit):</strong> Lower water heater thermostat to 120°F. Limit hot water cycles. Difficulty: Easy. Savings: ~10% utility energy reduction.</li>`;
     } else {
-      html += `<li><strong>Days 8-15 (Dietary Adjustments):</strong> Shift 3 meat-based meals to plant protein options. This cuts your dietary emissions by ~45 kg CO₂.</li>`;
+      html += `<li><strong>Days 8-15 (Diet Shift):</strong> Replace 3 beef meals with poultry or plant-based meals. Difficulty: Medium. Savings: ~${Math.round(meatMeals * 52 * 0.0027 * 0.3 * 1000)} kg CO₂.</li>`;
     }
-    html += `<li><strong>Days 16-22 (Zero Waste):</strong> Plan your meals ahead to eliminate food waste (currently rated as '${WASTE_LABELS[sliders.wasteLevel] || 'Medium'}'). Composting organic waste cuts methane output.</li>`;
-    html += `<li><strong>Days 23-30 (Shopping & Delivery):</strong> Consolidate your online purchases. Your ${sliders.shopCount} orders/month emit ~${Math.round(sliders.shopCount * 3)} kg CO₂ in package courier transport. Combine orders to reduce freight miles.</li>`;
+    html += `<li><strong>Days 16-22 (Zero Waste Habits):</strong> Improve recycling from level '${RECYCLE_LABELS[recycleRatio] || 'Low'}' to 'High' and plan meals to cut food waste. Difficulty: Easy. Savings: ~200 kg CO₂/yr.</li>`;
+    html += `<li><strong>Days 23-30 (Eco Shopping):</strong> Consolidate your ${shopCount} online shopping parcels to save shipping emissions. Difficulty: Easy. Savings: ~${Math.round(shopCount * 12 * 0.003 * 0.5 * 1000)} kg CO₂/yr.</li>`;
     html += `</ul>`;
-    html += `<p><em>Pledge these items under the "Actions" tab to track your progress!</em></p>`;
+    html += `<p><strong>Milestone:</strong> Completing this plan can reduce your carbon footprint by up to <strong>1.50 tonnes CO₂/year</strong>!</p>`;
   }
-  else if (q.includes('largest') || q.includes('source') || q.includes('cut') || q.includes('where should i start')) {
-    html += `<p>Your largest emission source is <strong>${primaryCat.toUpperCase()}</strong>, contributing <strong>${primaryVal} tonnes CO₂ / year</strong> (out of your total ${totalCo2}t).</p>`;
-    html += `<p>Here are three immediate ways to reduce it:</p>`;
+  else if (q.includes('compare') || q.includes('vs') || q.includes('ev') || q.includes('petrol') || q.includes('solar') || q.includes('electricity') || q.includes('bicycle') || q.includes('motorcycle')) {
+    html += `<h4>Sustainability Comparison Analysis</h4>`;
+    if (q.includes('ev') || q.includes('petrol') || q.includes('gasoline') || q.includes('car')) {
+      const gasYearly = (carKm * 52 * 0.17 * 0.001).toFixed(2);
+      const evYearly = (carKm * 52 * 0.03 * 0.001).toFixed(2);
+      const co2Savings = (carKm * 52 * 0.14 * 0.001).toFixed(2);
+      const petrolCost = Math.round(carKm * 52 * 0.12);
+      const evCost = Math.round(carKm * 52 * 0.03);
+      const moneySavings = petrolCost - evCost;
+
+      html += `<p><strong>Option A: Gasoline/Petrol Car vs Option B: Electric Vehicle (EV)</strong></p>`;
+      html += `<ul>`;
+      html += `<li><strong>Carbon Comparison:</strong> Based on your weekly driving of ${carKm} km, a gasoline car emits <strong>${gasYearly} tonnes CO₂/yr</strong>. An EV emits just <strong>${evYearly} tonnes CO₂/yr</strong>. Savings: <strong>${co2Savings} tonnes CO₂/yr</strong> (82% reduction).</li>`;
+      html += `<li><strong>Cost Comparison:</strong> Petrol fuel costs ~$0.12/km, totaling <strong>$${petrolCost}/yr</strong>. EV electricity charging costs ~$0.03/km, totaling <strong>$${evCost}/yr</strong>. Savings: <strong>$${moneySavings}/yr</strong>.</li>`;
+      html += `<li><strong>Long-term Environmental Impact:</strong> Over 10 years, transitioning to an EV will offset <strong>${(co2Savings * 10).toFixed(1)} tonnes CO₂</strong> and save you <strong>$${moneySavings * 10}</strong>.</li>`;
+      html += `<li><strong>Recommendation:</strong> Transition to an EV. Switch commutes to transit where possible. Difficulty: Hard (capital cost, high savings).</li>`;
+      html += `</ul>`;
+    }
+    else if (q.includes('solar') || q.includes('grid') || q.includes('panel')) {
+      const gridYearly = (electricityKwh * 12 * 0.001 * 0.082).toFixed(2);
+      const solarYearly = (electricityKwh * 12 * 0.001 * 0.016).toFixed(2);
+      const solarSavingsCo2 = (electricityKwh * 12 * 0.001 * 0.066).toFixed(2);
+      const electricityCost = Math.round(electricityKwh * 12 * 0.15);
+      const solarSavingsMoney = Math.round(electricityCost * 0.8);
+
+      html += `<p><strong>Option A: Grid Electricity vs Option B: Residential Solar Panels</strong></p>`;
+      html += `<ul>`;
+      html += `<li><strong>Carbon Comparison:</strong> Your electricity consumption of ${electricityKwh} kWh/mo emits <strong>${gridYearly} tonnes CO₂/yr</strong> from grid sources. Installing solar panels lowers this to <strong>${solarYearly} tonnes CO₂/yr</strong>. Savings: <strong>${solarSavingsCo2} tonnes CO₂/yr</strong> (80% reduction).</li>`;
+      html += `<li><strong>Cost Comparison:</strong> Grid bills total <strong>$${electricityCost}/yr</strong> at $0.15/kWh. Solar panels reduce billing by 80%, saving <strong>$${solarSavingsMoney}/yr</strong>.</li>`;
+      html += `<li><strong>Long-term Environmental Impact:</strong> Over 20 years, a solar setup offsets <strong>${(solarSavingsCo2 * 20).toFixed(1)} tonnes CO₂</strong> and saves <strong>$${solarSavingsMoney * 20}</strong>.</li>`;
+      html += `<li><strong>Recommendation:</strong> Install Solar Panels. Solar offsets your household electricity usage. Difficulty: Hard.</li>`;
+      html += `</ul>`;
+    }
+    else {
+      const bikeSavingsCo2 = (carKm * 52 * 0.08 * 0.001).toFixed(2);
+      html += `<p><strong>Option A: Bicycle vs Option B: Motorcycle</strong></p>`;
+      html += `<ul>`;
+      html += `<li><strong>Carbon Comparison:</strong> A bicycle has zero carbon emissions. A motorcycle emits ~0.08 kg CO₂/km. Substituting motorcycle trips with a bicycle saves <strong>${bikeSavingsCo2} tonnes CO₂/yr</strong>.</li>`;
+      html += `<li><strong>Cost Comparison:</strong> Bicycling has no fuel costs and minimal maintenance. Motorcycles require gasoline (~$0.05/km) and servicing.</li>`;
+      html += `<li><strong>Long-term Environmental Impact:</strong> Cycling eliminates air pollutants and improves personal health indices.</li>`;
+      html += `<li><strong>Recommendation:</strong> Use a bicycle for short distance commutes under 5 km. Difficulty: Easy/Medium.</li>`;
+      html += `</ul>`;
+    }
+  }
+  else if (q.includes('what uses the most electricity') || q.includes('electricity') || q.includes('drain') || q.includes('appliance') || q.includes('ac') || q.includes('refrigerator')) {
+    const hvac = Math.round(electricityKwh * 0.50);
+    const heater = Math.round(electricityKwh * 0.18);
+    const fridge = Math.round(electricityKwh * 0.15);
+    const laundry = Math.round(electricityKwh * 0.10);
+    const electronics = Math.round(electricityKwh * 0.07);
+
+    html += `<h4>Household Electricity Consumers Analysis</h4>`;
+    html += `<p>In a typical home, the largest consumers of your monthly <strong>${electricityKwh} kWh</strong> consumption are:</p>`;
+    html += `<ul>`;
+    html += `<li><strong>Heating & Cooling (HVAC/AC):</strong> 50% (~${hvac} kWh/mo). Settings at 68°F (winter) / 78°F (summer) cut cooling costs by 10%. Difficulty: Easy. Savings: ~${Math.round(hvac * 0.1)} kWh/mo.</li>`;
+    html += `<li><strong>Water Heater:</strong> 18% (~${heater} kWh/mo). Lowering thermostat to 120°F reduces standby energy. Difficulty: Easy. Savings: ~${Math.round(heater * 0.15)} kWh/mo.</li>`;
+    html += `<li><strong>Refrigerator:</strong> 15% (~${fridge} kWh/mo). Keep coils clean and maintain seals. Difficulty: Easy.</li>`;
+    html += `<li><strong>Washing Machine & Dryer:</strong> 10% (~${laundry} kWh/mo). Wash on cold settings and line dry. Difficulty: Easy. Savings: ~50 kWh/mo.</li>`;
+    html += `<li><strong>Electronics:</strong> 7% (~${electronics} kWh/mo). Unplug "vampire loads" using smart power strips. Difficulty: Easy.</li>`;
+    html += `</ul>`;
+    html += `<p><strong>Key Savings Opportunity:</strong> Replacing standard incandescent light bulbs with LEDs reduces lighting electricity usage by 75%, saving you approximately <strong>${Math.round(electricityKwh * 0.15)} kWh</strong> per month.</p>`;
+  }
+  else if (q.includes('analyze my footprint') || q.includes('how am i doing') || q.includes('footprint') || q.includes('score')) {
+    const score = Math.max(10, Math.min(100, Math.round(100 - totalCo2 * 7.5)));
+    let risk = 'C';
+    if (totalCo2 < 2.0) risk = 'A';
+    else if (totalCo2 < 4.0) risk = 'B';
+    else if (totalCo2 < 7.0) risk = 'C';
+    else if (totalCo2 < 12.0) risk = 'D';
+    else risk = 'F';
+
+    html += `<h4>EcoCoach Carbon Footprint Analysis</h4>`;
+    html += `<p>Here is your comprehensive footprint analysis:</p>`;
+    html += `<ul>`;
+    html += `<li><strong>Total Footprint:</strong> <strong>${totalCo2} tonnes CO₂/year</strong>.</li>`;
+    html += `<li><strong>Biggest Emission Source:</strong> <strong>${primaryCat.toUpperCase()}</strong> contributing ${primaryVal} tonnes/year.</li>`;
+    html += `<li><strong>Sustainability Score:</strong> <strong>${score}/100</strong>.</li>`;
+    html += `<li><strong>Carbon Risk Level:</strong> <strong>${risk}</strong>.</li>`;
+    html += `<li><strong>Key Observations:</strong> ${primaryCat === 'transport' ? 'Fossil fuel transport emissions are your primary footprint driver. Explore transit options.' : primaryCat === 'energy' ? 'Home energy utilities represent your highest emissions area. Switch to energy-star appliances.' : 'Dietary food patterns or consumption shopping options contribute heavily. Shift to plant-based meals.'}</li>`;
+    html += `<li><strong>Improvement Opportunities:</strong> Switching your biggest source (${primaryCat}) holds the highest reduction opportunity. Swapping transportation to EV or dietary protein to plant-based could shave off up to 1.5 tonnes CO₂ annually.</li>`;
+    html += `</ul>`;
+  }
+  else if (q.includes('what if') || q.includes('if i')) {
+    html += `<h4>Climate Action Scenario Simulation</h4>`;
+    if (q.includes('vegetarian') || q.includes('vegan') || q.includes('meat') || q.includes('diet')) {
+      const co2Reduction = (meatMeals * 52 * 0.0027).toFixed(2);
+      const moneySavings = Math.round(meatMeals * 52 * 1.50);
+      const scoreImprovement = Math.min(15, Math.round(meatMeals * 52 * 0.0027 * 7.5));
+
+      html += `<p><strong>Scenario: Switching to a fully plant-based / vegetarian diet</strong></p>`;
+      html += `<ul>`;
+      html += `<li><strong>Carbon Reduction:</strong> Eliminating beef and poultry meals saves <strong>${co2Reduction} tonnes CO₂/year</strong>.</li>`;
+      html += `<li><strong>Cost Savings:</strong> At an estimated saving of $1.50 per serving, you save <strong>$${moneySavings}/year</strong>.</li>`;
+      html += `<li><strong>Sustainability Score Improvement:</strong> Increases your score by <strong>+${scoreImprovement} points</strong>.</li>`;
+      html += `<li><strong>Long-term Impact:</strong> Over 10 years, this diet shift prevents <strong>${(co2Reduction * 10).toFixed(1)} tonnes CO₂</strong>, equal to planting 25 trees.</li>`;
+      html += `</ul>`;
+    }
+    else if (q.includes('electricity') || q.includes('reduce electricity') || q.includes('20%') || q.includes('energy')) {
+      const savingsKwh = Math.round(electricityKwh * 0.20);
+      const gridFactor = sliders.solarSavings ? 0.016 : 0.082;
+      const co2Reduction = (savingsKwh * 12 * 0.001 * gridFactor).toFixed(2);
+      const moneySavings = Math.round(savingsKwh * 12 * 0.15);
+      const scoreImprovement = Math.min(10, Math.round(co2Reduction * 7.5));
+
+      html += `<p><strong>Scenario: Reducing electricity consumption by 20%</strong></p>`;
+      html += `<ul>`;
+      html += `<li><strong>Carbon Reduction:</strong> Shaving off ${savingsKwh} kWh/mo cuts <strong>${co2Reduction} tonnes CO₂/year</strong>.</li>`;
+      html += `<li><strong>Cost Savings:</strong> Saves approximately <strong>$${moneySavings}/year</strong> on utility billing.</li>`;
+      html += `<li><strong>Sustainability Score Improvement:</strong> Increases your score by <strong>+${scoreImprovement} points</strong>.</li>`;
+      html += `<li><strong>Long-term Impact:</strong> Over 10 years, this reduces household emissions by <strong>${(co2Reduction * 10).toFixed(1)} tonnes CO₂</strong>.</li>`;
+      html += `</ul>`;
+    }
+    else if (q.includes('transit') || q.includes('bus') || q.includes('train') || q.includes('public transport') || q.includes('commute')) {
+      const co2Reduction = (50 * 52 * (0.00017 - 0.00004)).toFixed(2);
+      const moneySavings = Math.round(50 * 52 * 0.09);
+
+      html += `<p><strong>Scenario: Substituting 50 km of driving weekly with public transit</strong></p>`;
+      html += `<ul>`;
+      html += `<li><strong>Carbon Reduction:</strong> Shifting to rail/bus cuts emissions by <strong>${co2Reduction} tonnes CO₂/year</strong>.</li>`;
+      html += `<li><strong>Cost Savings:</strong> Fuel and wear savings total approximately <strong>$${moneySavings}/year</strong>.</li>`;
+      html += `<li><strong>Sustainability Score Improvement:</strong> Increases your score by <strong>+${Math.round(co2Reduction * 7.5)} points</strong>.</li>`;
+      html += `<li><strong>Long-term Impact:</strong> Prevents <strong>${(co2Reduction * 10).toFixed(1)} tonnes CO₂</strong> over 10 years.</li>`;
+      html += `</ul>`;
+    }
+    else {
+      html += `<p>You can run specific scenarios! Try asking:</p>`;
+      html += `<ul>`;
+      html += `<li>"What if I become vegetarian?"</li>`;
+      html += `<li>"What if I reduce electricity by 20%?"</li>`;
+      html += `<li>"What if I use public transport twice a week?"</li>`;
+      html += `</ul>`;
+    }
+  }
+  else if (q.includes('how can i reduce my carbon footprint') || q.includes('reduce my carbon footprint') || q.includes('reduce') || q.includes('how to reduce')) {
+    html += `<h4>Immediate Carbon Reduction Strategies</h4>`;
+    html += `<p>Your largest emission source is <strong>${primaryCat.toUpperCase()}</strong> (${primaryVal} tonnes/year).</p>`;
+    html += `<p>Here are high-impact interventions to target this source:</p>`;
     html += `<ol>`;
     if (primaryCat === 'transport') {
-      html += `<li><strong>Transition to EV:</strong> Swapping your gasoline car commutes to an EV (emissions factor: 0.03 kg/km vs 0.17 kg/km) will save up to <strong>${(sliders.carKm * 52 * 0.00014).toFixed(2)} tonnes CO₂</strong> annually.</li>`;
-      html += `<li><strong>Utilize Public Transit:</strong> Substituting public transit for just 150 km of driving weekly reduces emissions by <strong>1.01 tonnes CO₂/yr</strong>.</li>`;
-      html += `<li><strong>Minimize Flight Frequency:</strong> Cutting just 1 short-haul flight saves <strong>0.9 tonnes CO₂</strong>.</li>`;
+      html += `<li><strong>Swap Gasoline Driving:</strong> Switching gasoline miles to transit or EV. Expected impact: Saves up to <strong>${(carKm * 52 * 0.14 * 0.001).toFixed(2)} tonnes CO₂/yr</strong>. Difficulty: Medium.</li>`;
+      html += `<li><strong>Reduce Air Travel:</strong> Cutting 1 short-haul flight saves <strong>0.90 tonnes CO₂/yr</strong>. Difficulty: Medium.</li>`;
     } else if (primaryCat === 'energy') {
-      html += `<li><strong>Solar Panel Installation:</strong> Installing solar panels will offset your ${sliders.electricityKwh} kWh/mo grid consumption, reducing energy emissions from ${breakdown.energy}t to just ${(breakdown.energy * 0.2).toFixed(2)}t (saving <strong>${(breakdown.energy * 0.8).toFixed(2)} tonnes CO₂/yr</strong>).</li>`;
-      html += `<li><strong>LED Lighting Retrofit:</strong> Swapping home incandescent bulbs for LEDs reduces lighting electricity usage by 75%, saving ~150 kg CO₂/yr.</li>`;
-      html += `<li><strong>Conserve Water:</strong> Reducing your water usage of ${sliders.waterUsage} L/mo by 20% saves pumping energy, cutting ~20 kg CO₂/yr.</li>`;
+      html += `<li><strong>Residential Solar Panel:</strong> Offsets electricity usage by 80%. Expected impact: Saves up to <strong>${(electricityKwh * 12 * 0.001 * 0.066).toFixed(2)} tonnes CO₂/yr</strong>. Difficulty: Hard.</li>`;
+      html += `<li><strong>LED Retrofitting:</strong> Replacing home lights saves up to 75% on lighting drain. Expected impact: Saves ~150 kg CO₂/yr. Difficulty: Easy.</li>`;
     } else if (primaryCat === 'diet') {
-      html += `<li><strong>Replace Beef Meals:</strong> Beef has a footprint of 2.7 kg CO₂ per serving. Shifting ${Math.min(5, sliders.meatMeals)} meat meals to poultry or legumes saves up to <strong>${(Math.min(5, sliders.meatMeals) * 52 * 0.002).toFixed(2)} tonnes CO₂/yr</strong>.</li>`;
-      html += `<li><strong>Eliminate Food Waste:</strong> Reducing food waste from '${WASTE_LABELS[sliders.wasteLevel]}' to 'None' eliminates landfill methane, saving <strong>0.20 tonnes CO₂/yr</strong>.</li>`;
-      html += `<li><strong>Compost Organics:</strong> Composting turns food scraps into nutrient soil instead of landfill gas, cutting indirect footprint.</li>`;
+      html += `<li><strong>Plant-Based Meals:</strong> Swap beef serving for legumes/chicken. Expected impact: Saves up to <strong>${(meatMeals * 52 * 0.002 * 0.5).toFixed(2)} tonnes CO₂/yr</strong>. Difficulty: Medium.</li>`;
+      html += `<li><strong>Eliminate Food Waste:</strong> Reducing waste saves landfill methane. Expected impact: Saves up to 0.20 tonnes CO₂/yr. Difficulty: Easy.</li>`;
     } else {
-      html += `<li><strong>Buy Second-Hand:</strong> Buying high-quality second-hand apparel saves up to <strong>25 kg CO₂</strong> per clothing item (from your ${sliders.clothesCount} items/mo).</li>`;
-      html += `<li><strong>Consolidate Shipments:</strong> Grouping your ${sliders.shopCount} online packages/mo into single shipments saves courier delivery emissions (~15 kg CO₂ saved per combined order).</li>`;
-      html += `<li><strong>Maintain Appliances:</strong> Repairing items rather than buying replacement goods cuts global supply-chain emissions.</li>`;
+      html += `<li><strong>Consolidate Shipping:</strong> Grouping online purchases saves freight mileage. Expected impact: Saves ~20 kg CO₂ per combined box. Difficulty: Easy.</li>`;
+      html += `<li><strong>Buy Eco-Friendly Thrift:</strong> Purchase second-hand garments. Expected impact: Saves up to 25 kg CO₂ per shirt. Difficulty: Easy.</li>`;
     }
     html += `</ol>`;
+    html += `<p><strong>Practical Next Steps:</strong> Pick one "Easy" difficulty item above to commit to this week. Verify your metrics dynamically on the Dashboard.</p>`;
   }
   else if (q.includes('paris') || q.includes('target') || q.includes('2.0')) {
     const excess = (totalCo2 - 2.0).toFixed(2);
@@ -67,18 +205,9 @@ function getFallbackAdvice(question, sliders, totalCo2, breakdown) {
       html += `<li><strong>Action 1 (Diet Shift):</strong> Replace meat meals with plant-based dishes 4 days a week to save <strong>0.56 tonnes CO₂/yr</strong>.</li>`;
       html += `<li><strong>Action 2 (Energy Check):</strong> Lower electricity usage by 150 kWh/mo (saves <strong>1.48 tonnes CO₂/yr</strong>).</li>`;
     }
-    html += `<li><strong>Action 3 (Waste management):</strong> Raise your recycling level to '${RECYCLE_LABELS[3]}' to reduce landfill waste emissions by <strong>0.15 tonnes CO₂/yr</strong>.</li>`;
+    html += `<li><strong>Action 3 (Waste management):</strong> Raise your recycling level to '${RECYCLE_LABELS[3] || 'High'}' to reduce landfill waste emissions by <strong>0.15 tonnes CO₂/yr</strong>.</li>`;
     html += `</ul>`;
     html += `<p><em>Your Twin Profile will reflect letter grade 'A' once you drop below 2.0 tonnes.</em></p>`;
-  }
-  else if (q.includes('appliance') || q.includes('electricity') || q.includes('drain')) {
-    html += `<p>In standard households, the highest energy drains are:</p>`;
-    html += `<ul>`;
-    html += `<li><strong>Heating & Cooling (HVAC):</strong> Accounts for ~50% of utility bills. Setting thermostat to 68°F (winter) and 78°F (summer) can save up to 10% energy.</li>`;
-    html += `<li><strong>Water Heater:</strong> Consumes ~18% of household energy. Lowering temperature settings to 120°F cuts standby losses.</li>`;
-    html += `<li><strong>Refrigerator & Lighting:</strong> Refrigerator runs 24/7 consuming ~150 kWh/mo. Incandescent bulbs waste 90% energy as heat; replacing with LEDs saves 75% lighting drain.</li>`;
-    html += `</ul>`;
-    html += `<p>Based on your current usage of <strong>${sliders.electricityKwh} kWh/mo</strong>, doing an LED swap can save you approximately <strong>${Math.round(sliders.electricityKwh * 0.15)} kWh</strong> per month.</p>`;
   }
   else if (q.includes('offset') || q.includes('cost')) {
     html += `<p><strong>Carbon Offsets</strong> fund certified environmental projects (reforestation, wind farms) that absorb or prevent CO₂ emissions to compensate for your footprint.</p>`;
@@ -89,33 +218,27 @@ function getFallbackAdvice(question, sliders, totalCo2, breakdown) {
     html += `<li><strong>Your Carbon Invoice:</strong> To offset your annual footprint of <strong>${totalCo2} tonnes</strong>, it would cost between <strong>$${(totalCo2 * 12).toFixed(2)}</strong> and <strong>$${(totalCo2 * 25).toFixed(2)}</strong> per year.</li>`;
     html += `</ul>`;
   }
-  else if (q.includes('plant-based') || q.includes('diet') || q.includes('methane') || q.includes('vegan')) {
-    html += `<p>A plant-based diet significantly reduces emissions by bypassing livestock production, which releases methane (a greenhouse gas 28x more potent than CO₂ over 100 years).</p>`;
-    html += `<ul>`;
-    html += `<li><strong>LCO2 Comparison:</strong> Beef creates ~60 kg CO₂e per kg of protein, whereas pea protein or wheat produce under 1 kg CO₂e.</li>`;
-    html += `<li><strong>Your Diet Footprint:</strong> You eat meat meals <strong>${sliders.meatMeals} times/week</strong>, contributing <strong>${breakdown.diet} tonnes CO₂/yr</strong>.</li>`;
-    html += `<li><strong>Potential savings:</strong> Substituting plant protein for beef/pork just 3 times a week saves <strong>0.42 tonnes CO₂/yr</strong>, equivalent to planting 7 trees.</li>`;
-    html += `</ul>`;
-  }
-  else if (q.includes('shipping') || q.includes('order') || q.includes('online') || q.includes('e-commerce') || q.includes('packages')) {
-    html += `<p>Online shopping has a carbon cost driven by packaging waste and delivery vehicle transit. The average parcel delivery emits <strong>1.5 kg to 3.0 kg of CO₂</strong>.</p>`;
-    html += `<p><strong>Your Consumption Footprint:</strong></p>`;
-    html += `<ul>`;
-    html += `<li>Your current <strong>${sliders.shopCount} online orders/month</strong> contribute <strong>${(sliders.shopCount * 12 * 0.003).toFixed(2)} tonnes CO₂/yr</strong>.</li>`;
-    html += `<li><strong>Combined Delivery:</strong> Grouping items to ship in a single box cuts delivery truck runs and packaging waste by up to 50%.</li>`;
-    html += `<li><strong>Opt for Ground Shipping:</strong> Next-day air transport is up to 10x more carbon intensive than ground truck delivery.</li>`;
-    html += `</ul>`;
-  }
   else {
-    // General fallback summary with exact details
     html += `<p>Thanks for chatting! I am analyzing your profile metrics. Your footprint is <strong>${totalCo2} tonnes CO₂/year</strong>.</p>`;
     html += `<p>Your primary source is <strong>${primaryCat.toUpperCase()}</strong> (${primaryVal}t CO₂/yr). Try asking about:</p>`;
     html += `<ul>`;
     html += `<li>"Draft a customized 30-day carbon reduction calendar action plan for me."</li>`;
     html += `<li>"What household appliances use the most electricity and how do I reduce their drain?"</li>`;
     html += `<li>"Explain carbon offsets - how do I choose a reputable one and what do they cost?"</li>`;
+    html += `<li>"Compare gasoline vs EV driving footprint costs."</li>`;
     html += `</ul>`;
   }
+
+  // Follow-Up Questions Suggestion block
+  html += `<hr style="border:0; border-top:1px solid var(--border); margin:1.5rem 0 1rem 0;" />`;
+  html += `<p style="font-size:13px; color:var(--text-secondary); font-weight:600; margin-bottom:8px;">💡 Suggested follow-up questions:</p>`;
+  html += `<ul style="font-size:12px; list-style-type:none; padding-left:0; display:flex; flex-direction:column; gap:6px;">`;
+  html += `<li><a href="#" onclick="window.askAi('Draft a customized 30-day carbon reduction calendar action plan for me.')" style="color:var(--green); text-decoration:none; font-weight:700;">📅 &quot;Would you like a personalized 30-day action plan?&quot;</a></li>`;
+  html += `<li><a href="#" onclick="window.askAi('Analyze my footprint')" style="color:var(--green); text-decoration:none; font-weight:700;">🔍 &quot;Want me to identify your biggest emission source?&quot;</a></li>`;
+  html += `<li><a href="#" onclick="window.askAi('What if I reduce electricity by 20%?')" style="color:var(--green); text-decoration:none; font-weight:700;">⚡ &quot;Would you like to simulate a 20% reduction in electricity usage?&quot;</a></li>`;
+  html += `<li><a href="#" onclick="window.askAi('Compare EV vs Petrol')" style="color:var(--green); text-decoration:none; font-weight:700;">🚗 &quot;Interested in comparing renewable energy options?&quot;</a></li>`;
+  html += `</ul>`;
+
   return html;
 }
 
@@ -148,7 +271,6 @@ async function callGeminiCascade(apiKey, options = {}) {
       let responseText = '';
 
       if (history && history.length > 0) {
-        // Chat mode
         const geminiHistory = history.map(msg => ({
           role: msg.sender === 'user' ? 'user' : 'model',
           parts: [{ text: msg.text }]
@@ -157,13 +279,11 @@ async function callGeminiCascade(apiKey, options = {}) {
         const result = await chat.sendMessage(prompt);
         responseText = result.response.text();
       } else if (base64Image && mimeType) {
-        // Multi-modal mode
         const buffer = Buffer.from(base64Image.split(",")[1] || base64Image, 'base64');
         const imagePart = fileToGenerativePart(buffer, mimeType);
         const result = await model.generateContent([prompt, imagePart]);
         responseText = result.response.text();
       } else {
-        // Text-only mode
         const result = await model.generateContent(prompt);
         responseText = result.response.text();
       }
@@ -190,21 +310,122 @@ router.post('/insights', authMiddleware, async (req, res) => {
 
   const apiKey = process.env.GEMINI_API_KEY;
 
+  // Query database profiles and metadata for deep context
+  let sustainabilityScore = 70;
+  let riskScore = 'B';
+  let habitsForecast = '';
+  let completedActions = [];
+  let receipts = [];
+  let simulation = null;
+
+  try {
+    const profile = await db.getCarbonProfile(req.user.id);
+    if (profile) {
+      sustainabilityScore = profile.sustainabilityScore || 70;
+      riskScore = profile.riskScore || 'B';
+      habitsForecast = profile.habits || '';
+    }
+  } catch (e) {
+    console.warn("Could not read user profile for insights context:", e.message);
+  }
+
+  try {
+    completedActions = await db.getUserActions(req.user.id);
+  } catch (e) {}
+
+  try {
+    receipts = await db.getOCRReceipts(req.user.id);
+  } catch (e) {}
+
+  try {
+    simulation = await db.getSimulation(req.user.id);
+  } catch (e) {}
+
   if (!apiKey || apiKey.trim() === '' || apiKey === 'YOUR_GEMINI_API_KEY') {
     const advice = getFallbackAdvice(question, sliders, totalCo2, breakdown);
-    return res.json({ response: advice, offline: true });
+    return res.json({
+      response: `<p>Advanced analysis is temporarily unavailable. Based on your available data, here are some recommendations.</p>${advice}`,
+      offline: true
+    });
   }
 
   try {
     const systemPrompt = `
-You are EcoCoach, a friendly, extremely knowledgeable sustainability bot.
-You analyze the user's carbon metrics:
-- User: ${req.user.name}
-- Total Carbon Footprint: ${totalCo2} tonnes CO₂/yr
-- Breakdown: Transport ${breakdown.transport}t, Energy ${breakdown.energy}t, Diet ${breakdown.diet}t, Shopping ${breakdown.shopping}t
-- Habits: Drives ${sliders.carKm || 0}km/wk, EV drives ${sliders.evKm || 0}km/wk, Flights ${sliders.flightsCount || 0}/yr, Electricity ${sliders.electricityKwh || 0}kWh/mo, Gas ${sliders.gasCylinders || 0} cylinders/mo, Water ${sliders.waterUsage || 0}L/mo, Meat meals ${sliders.meatMeals || 0}/wk, Food waste ${sliders.wasteLevel || 0}/3, Recycle ${sliders.recycleRatio || 0}/3.
+You are EcoCoach AI, the intelligent, professional, and friendly sustainability assistant of EcoTwin AI.
+Your role is to provide personalized, data-driven, and conversational guidance to help users understand, track, predict, and reduce their carbon footprint.
 
-Provide actionable, encouraging, and exact advice based on these numbers. Respond in clean HTML tags (<p>, <ul>, <li>, <strong>). Do not use markdown. Keep details concise and under 3 paragraphs.
+## User Context
+- User Name: ${req.user.name}
+- Carbon Footprint Score: ${totalCo2} tonnes CO₂/year
+- Sustainability Score: ${sustainabilityScore}/100
+- Carbon Risk Level: ${riskScore}
+- Carbon Twin Summary Forecast: ${habitsForecast || 'Initial configuration loaded.'}
+- Home Energy / Utility Stats:
+  * Electricity: ${sliders.electricityKwh || 0} kWh/month (Grid is 0.082 kg/kWh, Solar reduces this by 80% to 0.016 kg/kWh)
+  * Gas: ${sliders.gasCylinders || 0} cylinders/month (42.3 kg CO₂ per cylinder)
+  * Water: ${sliders.waterUsage || 0} litres/month (0.3 kg CO₂ per 1000 litres)
+  * Total Utilities/Energy CO₂ emissions: ${breakdown.energy || 0} tonnes/year
+- Transportation Stats:
+  * Gasoline Car weekly: ${sliders.carKm || 0} km/week (0.17 kg CO₂/km)
+  * Electric Vehicle (EV) weekly: ${sliders.evKm || 0} km/week (0.03 kg CO₂/km)
+  * Public Transit weekly: ${sliders.transitKm || 0} km/week (0.04 kg CO₂/km)
+  * Flights taken: ${sliders.flightsCount || 0} flights/year (900 kg CO₂ per flight)
+  * Total Transportation CO₂ emissions: ${breakdown.transport || 0} tonnes/year
+- Diet & Waste Stats:
+  * Meat meals: ${sliders.meatMeals || 0} meals/week (2.7 kg CO₂ per meal)
+  * Waste Level: ${sliders.wasteLevel || 0}/3 (0=None, 1=Low, 2=Medium, 3=High)
+  * Recycle Ratio: ${sliders.recycleRatio || 0}/3 (0=None, 1=Low, 2=Medium, 3=High)
+  * Total Diet & Waste CO₂ emissions: ${breakdown.diet || 0} tonnes/year
+- Shopping & Apparel Stats:
+  * Clothes bought: ${sliders.clothesCount || 0} items/month (25 kg CO₂ per piece)
+  * Online order parcels: ${sliders.shopCount || 0} orders/month (3 kg CO₂ per parcel)
+  * Total Shopping CO₂ emissions: ${breakdown.shopping || 0} tonnes/year
+- Completed Actions Tracker (Completed Action IDs): [${(completedActions || []).join(', ')}]
+- Recent Scanned Receipts (from OCR scanner):
+${(receipts || []).slice(0, 3).map(r => `  * ${r.receiptType} receipt - Cost: $${r.extractedData.cost || 0}, quantity: ${r.extractedData.quantity || 0} ${r.extractedData.unit || ''}, emissions impact: ${r.emissions || 0}t`).join('\n') || '  * No scanned receipts logged yet.'}
+- Simulation data: ${simulation ? `Annual CO₂ savings: ${simulation.annualSavingsCo2 || 0}t, Annual financial savings: $${simulation.annualSavingsMoney || 0}` : 'No simulator settings set yet.'}
+
+## Dynamic Conversation Rules
+* Always answer the user's actual question directly. Never force pre-defined scripts or rigid answers.
+* Keep conversations natural, interactive, encouraging, and highly personalized using the user's name (${req.user.name}) and metrics.
+* Never repeat the same advice; look at the chat history to see what was discussed.
+* If user metrics/context are referenced in the question, perform accurate mathematical calculations based on the metrics above (e.g. EV vs Petrol savings, solar offset, vegetarian diet cuts).
+* You must ONLY respond using clean, standard HTML tags (such as <p>, <ul>, <li>, <strong>, <ol>, <hr />, etc.). DO NOT use any markdown characters (no asterisks, no hashes, no markdown bullet points).
+* Avoid showing any API logs, database objects, stack traces, or technical backend jargon.
+
+## Specific Answer Frameworks
+- "How can I reduce my carbon footprint?": Identify their largest emission source in breakdown, suggest the highest-impact improvements (e.g. switching to EV, solar, or reducing meat), estimate the exact carbon savings using their weekly/monthly values, and provide next steps.
+- "Analyze my footprint": Give: Total footprint, Biggest emission source, Carbon risk level, Key observations, and Improvement opportunities.
+- "Generate a plan": Create a personalized 7-day, 30-day, or 90-day action calendar/plan, with daily or weekly goals, expected carbon reductions, and milestones.
+- "Compare two options" (e.g., EV vs Petrol, Solar vs Grid, Bicycle vs Motorcycle):
+  * EV vs Petrol: Compare carbon (Gas is 0.17 kg/km; EV is 0.03 kg/km. Savings is 0.14 kg CO₂/km), cost (Petrol ~$0.12/km vs EV ~$0.03/km), long-term impact, and recommendation. Use their weekly carKm for custom estimates.
+  * Solar vs Grid: Compare carbon (Grid is 0.082 kg/kWh; Solar is 0.016 kg/kWh. Savings is 0.066 kg CO₂/kWh), utility cost, long-term impact, and recommendation. Use their monthly electricityKwh.
+- "What uses the most electricity?": Analyze HVAC/AC (~50%), Water Heater (~18%), Refrigerator (~15%), Laundry (~10%), Electronics (~7%). Identify major energy consumers and saving opportunities.
+- "How am I doing?": Provide progress summary, sustainability score, carbon trend, achievements (referencing completed action IDs), and areas needing improvement.
+- "What if..." questions (e.g., what if I use public transit twice a week, what if I reduce electricity by 20%, what if I become vegetarian):
+  * vegetarian/vegan: calculate saving: meatMeals * 52 * 0.0027 tonnes CO₂/yr. Estimate cost savings and score increase.
+  * electricity by 20%: calculate saving: electricityKwh * 0.20 * 12 * 0.001 * (solarSavings ? 0.016 : 0.082) tonnes CO₂/yr.
+  * public transport twice a week (shifting 50 km/week): calculate saving: 50 * 52 * 0.00013 tonnes CO₂/yr.
+
+## Recommendations
+Every recommendation should include:
+- Action
+- Expected impact
+- Difficulty level (Easy, Medium, Hard)
+- Estimated savings (if possible)
+Prioritize recommendations by impact.
+
+## Follow-Up Behavior
+At the end of your response, always include a horizontal rule (<hr />) and a clean HTML list of 3-4 suggested follow-up questions formatted as clickable links that call window.askAi:
+<hr />
+<p style="font-size:13px; color:var(--text-secondary); font-weight:600; margin-bottom:8px;">💡 Suggested follow-up questions:</p>
+<ul style="font-size:12px; list-style-type:none; padding-left:0; display:flex; flex-direction:column; gap:6px;">
+  <li><a href="#" onclick="window.askAi('Draft a customized 30-day carbon reduction calendar action plan for me.')" style="color:var(--green); text-decoration:none; font-weight:700;">📅 &quot;Would you like a personalized 30-day action plan?&quot;</a></li>
+  <li><a href="#" onclick="window.askAi('Analyze my footprint')" style="color:var(--green); text-decoration:none; font-weight:700;">🔍 &quot;Want me to identify your biggest emission source?&quot;</a></li>
+  <li><a href="#" onclick="window.askAi('What if I reduce electricity by 20%?')" style="color:var(--green); text-decoration:none; font-weight:700;">⚡ &quot;Would you like to simulate a 20% reduction in electricity usage?&quot;</a></li>
+  <li><a href="#" onclick="window.askAi('Compare EV vs Petrol')" style="color:var(--green); text-decoration:none; font-weight:700;">🚗 &quot;Interested in comparing renewable energy options?&quot;</a></li>
+</ul>
+Do not add anything else after this list. Keep the response clean and helpful.
 `;
 
     const cascadeResult = await callGeminiCascade(apiKey, {
@@ -217,7 +438,10 @@ Provide actionable, encouraging, and exact advice based on these numbers. Respon
   } catch (err) {
     console.error('Gemini Insights API error:', err);
     const fallback = getFallbackAdvice(question, sliders, totalCo2, breakdown);
-    res.json({ response: `<p style="color:var(--coral);">Gemini error: using fallback report.</p>` + fallback, offline: true });
+    res.json({
+      response: `<p>Advanced analysis is temporarily unavailable. Based on your available data, here are some recommendations.</p>${fallback}`,
+      offline: true
+    });
   }
 });
 
