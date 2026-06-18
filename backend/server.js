@@ -27,18 +27,23 @@ const allowedOrigins = [
   'http://127.0.0.1:5173',
   process.env.FRONTEND_URL,
   process.env.CORS_ORIGIN
-].filter(Boolean);
+].map(url => url ? url.replace(/\/$/, '') : '').filter(Boolean);
+
+const isLocalhost = (url) => {
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(url);
+};
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps, curl, or same-origin)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    if (allowedOrigins.includes(normalizedOrigin) || isLocalhost(normalizedOrigin) || process.env.NODE_ENV !== 'production') {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));
   },
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
