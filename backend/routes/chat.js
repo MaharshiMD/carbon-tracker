@@ -115,13 +115,25 @@ Please format your response using standard HTML tags (such as <p>, <ul>, <li>, <
     // Process history: identify current prompt and history.
     // If the last item of history is the user's new message, slice it off so it isn't duplicated in history and prompt.
     let currentMessage = message || '';
-    let pastHistory = [...history];
+    let rawHistory = [...history];
 
-    if (!currentMessage && pastHistory.length > 0 && pastHistory[pastHistory.length - 1].role === 'user') {
-      currentMessage = pastHistory[pastHistory.length - 1].content;
-      pastHistory.pop();
-    } else if (currentMessage && pastHistory.length > 0 && pastHistory[pastHistory.length - 1].content === currentMessage) {
-      pastHistory.pop();
+    if (!currentMessage && rawHistory.length > 0 && rawHistory[rawHistory.length - 1].role === 'user') {
+      currentMessage = rawHistory[rawHistory.length - 1].content;
+      rawHistory.pop();
+    } else if (currentMessage && rawHistory.length > 0 && rawHistory[rawHistory.length - 1].content === currentMessage) {
+      rawHistory.pop();
+    }
+
+    // Filter rawHistory to ensure the first element is a user message (Gemini API requirement)
+    let pastHistory = [];
+    let hasUserMessage = false;
+    for (const msg of rawHistory) {
+      if (msg.role === 'user') {
+        hasUserMessage = true;
+      }
+      if (hasUserMessage) {
+        pastHistory.push(msg);
+      }
     }
 
     if (!currentMessage) {
