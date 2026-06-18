@@ -12,6 +12,8 @@ db.initDB();
 const authRoutes = require('./routes/auth');
 const trackingRoutes = require('./routes/tracking');
 const aiRoutes = require('./routes/ai');
+const gamificationRoutes = require('./routes/gamification');
+const communityRoutes = require('./routes/community');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -71,6 +73,8 @@ app.use('/api/ai/', aiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/tracking', trackingRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/gamification', gamificationRoutes);
+app.use('/api/community', communityRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
