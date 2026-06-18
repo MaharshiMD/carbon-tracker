@@ -22,7 +22,7 @@ const DEFAULT_SLIDERS = {
 const WASTE_LABELS = ['None', 'Low', 'Medium', 'High'];
 const RECYCLE_LABELS = ['None', 'Low', 'Medium', 'High'];
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 export default function App() {
   // Authentication states
