@@ -159,7 +159,7 @@ Provide actionable, encouraging, and exact advice based on these numbers. Respon
 `;
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-3.1-flash-lite',
       systemInstruction: systemPrompt
     });
 
@@ -195,7 +195,7 @@ router.post('/ocr', authMiddleware, async (req, res) => {
   if (apiKey && apiKey.trim() !== '' && base64Image) {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
 
       const buffer = Buffer.from(base64Image.split(",")[1], 'base64');
       const imagePart = fileToGenerativePart(buffer, "image/png");
@@ -288,7 +288,7 @@ router.post('/vision', authMiddleware, async (req, res) => {
   if (apiKey && apiKey.trim() !== '' && base64Image) {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
 
       const buffer = Buffer.from(base64Image.split(",")[1], 'base64');
       const imagePart = fileToGenerativePart(buffer, "image/png");
@@ -410,7 +410,7 @@ Keep descriptions vivid, highlighting forest cover, temperature increases, air q
   "globalTempRise": 1.2
 }
 `;
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
       const result = await model.generateContent(prompt);
       const text = result.response.text();
       const cleaned = text.replace(/```json|```/gi, '').trim();
