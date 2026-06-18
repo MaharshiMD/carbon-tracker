@@ -12,6 +12,7 @@ db.initDB();
 const authRoutes = require('./routes/auth');
 const trackingRoutes = require('./routes/tracking');
 const aiRoutes = require('./routes/ai');
+const chatRoutes = require('./routes/chat');
 const gamificationRoutes = require('./routes/gamification');
 const communityRoutes = require('./routes/community');
 
@@ -73,11 +74,13 @@ app.use('/api/', globalLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/ai/', aiLimiter);
+app.use('/api/chat', aiLimiter);
 
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tracking', trackingRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/chat', chatRoutes);
 app.use('/api/gamification', gamificationRoutes);
 app.use('/api/community', communityRoutes);
 

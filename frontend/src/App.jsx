@@ -481,29 +481,41 @@ export default function App() {
     setChatMessages(prev => [...prev, newUserMsg]);
 
     try {
-      const apiHistory = chatMessages.map(msg => ({ sender: msg.sender, text: msg.text }));
-      const res = await fetch(`${API_BASE}/api/ai/insights`, {
+      const apiHistory = chatMessages.map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.text
+      }));
+
+      const carbonProfile = {
+        name: user?.name || 'Maharshi Dihora',
+        annualFootprint: totalCo2 || 0,
+        energyEmissions: breakdown.energy || 0,
+        transportEmissions: breakdown.transport || 0,
+        foodEmissions: breakdown.diet || 0,
+        shoppingEmissions: breakdown.shopping || 0,
+        sustainabilityScore: twinData?.profile?.sustainabilityScore || 70
+      };
+
+      const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          question: q,
-          sliders,
-          breakdown,
-          totalCo2,
-          history: apiHistory
+          message: q,
+          carbonProfile,
+          history: [...apiHistory, { role: 'user', content: q }]
         })
       });
       const data = await res.json();
-      if (res.ok) {
+      if (res.ok && data.response) {
         setChatMessages(prev => [...prev, { sender: 'ai', text: data.response }]);
       } else {
-        setChatMessages(prev => [...prev, { sender: 'ai', text: `<p>Advanced analysis is temporarily unavailable. Based on your available data, here are some recommendations.</p><p>Please review your energy and transit levels on the dashboard or try again in a few moments.</p>` }]);
+        setChatMessages(prev => [...prev, { sender: 'ai', text: `<p>EcoCoach is temporarily unavailable. Please try again.</p>` }]);
       }
     } catch (err) {
-      setChatMessages(prev => [...prev, { sender: 'ai', text: `<p>Advanced analysis is temporarily unavailable. Based on your available data, here are some recommendations.</p><p>Please check your network connection and try again.</p>` }]);
+      setChatMessages(prev => [...prev, { sender: 'ai', text: `<p>EcoCoach is temporarily unavailable. Please try again.</p>` }]);
     } finally {
       setAiLoading(false);
     }
@@ -1607,7 +1619,7 @@ export default function App() {
                 ))}
                 {aiLoading && (
                   <div className="bubble ai">
-                    <div style={{ color: 'var(--green)', fontWeight: '600' }}>EcoCoach is analyzing carbon factors...</div>
+                    <div style={{ color: 'var(--green)', fontWeight: '600' }}>EcoCoach is thinking...</div>
                   </div>
                 )}
               </div>
