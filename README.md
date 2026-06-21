@@ -269,8 +269,3 @@ This project is aligned with the challenge requirements because it demonstrates:
 - Mobile-first optimization.
 - Deeper carbon budgeting and target planning tools.
 
----
-
-# 📄 License
-
-This project is licensed under the MIT License.
