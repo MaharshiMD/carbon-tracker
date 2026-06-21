@@ -1,16 +1,47 @@
-# React + Vite
+# 🌱 EcoTwin AI — Frontend Client Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This directory contains the client React application for EcoTwin AI, built with **Vite** and styled using **Vanilla CSS Variables**.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🎨 Design & UI Architecture
+- **Glassmorphic Layouts:** Modern translucent panels utilizing CSS backdrop filters.
+- **Custom CSS Variables:** Harmonious dark mode color palettes, subtle micro-animations, and dynamic visual state indicators.
+- **Responsive Dashboard:** Flexible layout adapted for mobile and desktop screens.
+- **Typography:** Uses Google Fonts (Outfit) for a polished, modern aesthetic.
+- **Interactive SVG Charts:** Leverages raw inline SVG components (under `src/components/Chart.jsx`) for carbon breakdown donut visualizations and monthly emission progress bar charts.
 
-## React Compiler
+## 📂 Key Directory Contents
+- **`src/main.jsx`**: Bootstraps the React client.
+- **`src/App.jsx`**: The main application controller managing views (Dashboard, EcoCoach Chat, Receipt OCR, CV Analyzer, Simulator, Future Earth, Gamification, Community Heatmap), user auth hooks, and API integration.
+- **`src/App.css`**: Styling overrides.
+- **`src/index.css`**: Design tokens, variables, typography, and animation definitions.
+- **`src/components/Chart.jsx`**: Handles client-side SVG rendering of carbon emissions statistics.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Getting Started
 
-## Expanding the ESLint configuration
+### 1. Installation
+Install workspace dependencies from the root directory:
+```bash
+npm install
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 2. Configure Environment
+Create a `.env` file under the `frontend` folder:
+```env
+VITE_API_URL=http://localhost:5000
+```
+*(If left blank, frontend calls default to current window origin)*
+
+### 3. Run Development Server
+Start the frontend server from the root workspace context:
+```bash
+npm run dev:frontend
+```
+The application will launch on [http://localhost:5173](http://localhost:5173).
+
+## 🛠️ Production Build
+To compile the static production bundle to `/dist`:
+```bash
+npm run build:frontend
+```
