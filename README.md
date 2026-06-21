@@ -1,57 +1,8 @@
-# 🌱 EcoTwin AI — Digital Carbon Twin & AI-Powered Sustainability Advisor
+# 🌱 EcoTwin AI — Digital Carbon Twin & AI-Powered Sustainability Assistant
 
-EcoTwin AI is a premium, full-stack, gamified carbon tracking and simulation platform designed to connect personal lifestyle choices with real-world environmental impact. By pairing interactive dashboard metrics with cutting-edge **Google Gemini AI**, EcoTwin AI generates a dynamic, predictive carbon twin of your lifestyle, allowing you to scan bills/objects, simulate future climate outcomes, and pledge actions to lower your footprint.
+EcoTwin AI is a full-stack AI-powered sustainability assistant that helps users track, understand, and reduce their carbon footprint through personalized analytics, simulations, and eco-guidance.
 
----
-
-## 📖 Table of Contents
-1. [✨ Key Features](#-key-features)
-2. [🛠️ Tech Stack & Monorepo Architecture](#%EF%B8%8F-tech-stack--monorepo-architecture)
-3. [💾 Database Architecture & Fallback System](#-database-architecture--fallback-system)
-4. [🚀 Local Development Setup](#-local-development-setup)
-5. [🌐 Environment Configuration](#-environment-configuration)
-6. [📂 Folder Directory Structure](#-folder-directory-structure)
-7. [☁️ Production Deployment Guide](#%EF%B8%8F-production-deployment-guide)
-8. [🔒 Security & Rate-Limiting Policies](#-security--rate-limiting-policies)
-9. [📄 License](#-license)
-
----
-
-## ✨ Key Features
-
-### ♊ 1. Digital Carbon Twin Profile
-- Generates a customized narrative state representing your digital carbon avatar's environment (ranging from a **Lush Oasis** at $< 2.0$ tonnes CO₂/yr to a **Smoggy Industrial** wasteland at $> 10.0$ tonnes CO₂/yr).
-- Computes real-time sustainability grades (**A** through **F**) and scores based on live activity statistics.
-
-### 💬 2. EcoCoach AI Chatbot
-- A personalized conversational assistant powered by Google Gemini, tailored directly to your footprint metrics, energy sliders, and active simulations.
-- Returns clean HTML formatting and dynamically suggested follow-up questions to keep the conversation flowing.
-
-### 🧾 3. AI-Powered OCR Receipt Scanner
-- Allows users to upload utility, fuel, food, or shopping bills.
-- Uses multi-modal vision models to identify costs, extract exact metrics (litres, kWh, item counts), and log the calculated carbon footprint directly to the user's ledger.
-
-### 👁️ 4. CV Carbon Analyzer (Computer Vision)
-- Analyzes photos of meals, vehicles, appliances, waste, or apparel.
-- Instantly estimates lifecycle carbon impact (in kg CO₂), suggests eco-friendly green alternatives, provides confidence scoring, and unlocks the **"Eye of the Twin"** achievement badge.
-
-### 🌍 5. Future Earth Projection Mode
-- Models the climate state of your city 5, 10, and 20 years into the future based on your current footprint.
-- Simulates vivid consequences (forest fires, smog alerts, water rationing, HVAC costs) and calculates the projected global temperature rise.
-
-### ⚡ 6. Scenario Impact Simulator
-- Toggles actionable adjustments (installing solar panels, switching to EVs, or shifting to vegetarian/vegan diets) to immediately calculate yearly financial savings and CO₂ offsets.
-
-### 🎮 7. Gamification & Streaks
-- Tracks daily and weekly sustainability challenges (e.g. *Public Transit Day*, *Zero Food Waste*, *Unplug the Vampires*).
-- Features level progression (XP), streak counters, badges, and a community leaderboard.
-
-### 🗺️ 8. Community Sustainability Heatmap
-- Allows collaborative check-ins for planting trees or reporting waste pollution across local regions (e.g., *Mumbai District*, *San Francisco Bay Area*).
-
-### 🛡️ 9. Intelligent Gemini Model Cascade
-- Automatically queries the high-performance `gemini-2.5-flash` model, with seamless fallback/failover to `gemini-3.1-flash-lite` if the API encounters 503/429 limits or rate throttling.
-- Integrates a smart, rule-based local fallback advisor to ensure full offline functionality when no API keys are configured.
+Built as a smart assistant platform, EcoTwin AI creates a digital carbon twin of a user’s lifestyle using inputs such as transport habits, energy usage, food choices, and shopping behavior. It then turns those inputs into actionable sustainability insights through dashboards, AI recommendations, OCR scanning, scenario simulations, and future impact forecasting.
 
 ---
 
@@ -59,153 +10,267 @@ EcoTwin AI is a premium, full-stack, gamified carbon tracking and simulation pla
 
 ![EcoTwin AI Tech Stack](assets/tech_stack.jpg)
 
-The project is structured as an **NPM Workspace monorepo** to orchestrate dependencies easily across services:
+---
 
-- **Root Monorepo Manager:** Package workspace management via NPM.
-- **Frontend App:** Built with React 18, Vite, CSS Variables (sleek dark mode, glassmorphic layout, Outfit typography, responsive grid), and dynamic inline SVG dashboard charts.
-- **Backend API:** Node.js, Express, JSON Web Token (JWT) sessions, and Bcrypt security hashes.
-- **AI Integrations:** Google Generative AI SDK (`@google/generative-ai`) handling multi-modal vision prompt engineering.
+# 📸 Project Screenshots
+
+## Landing Page
+![EcoTwin AI Landing Page](assets/landing_page.png)
+
+## Sustainability Dashboard
+![EcoTwin AI Dashboard](assets/dashboard_overview.png)
+
+## Feature Navigation & Modules
+![EcoTwin AI Features Panel](assets/features_sidebar.png)
 
 ---
 
-## 💾 Database Architecture & Fallback System
+# 🚀 Hackathon Submission Overview
 
-EcoTwin AI features a **dual-layer database engine** configured in `backend/database.js`:
+### Chosen Vertical
+- **Sustainability / Climate-Tech Assistant**
 
-1. **MongoDB Mode (Production-grade):** When a valid `MONGO_URI` is supplied in the `.env` file, the backend automatically connects to MongoDB via Mongoose, spinning up optimized indexed schemas.
-2. **Local JSON Flat-File Fallback:** If MongoDB is offline or `MONGO_URI` is omitted, the app instantly falls back to an **offline-first local database** stored under `backend/data/` as JSON files (`users.json`, `footprints.json`, `activities.json`, etc.). This enables zero-config local development and testing.
+### Target Persona
+- **Individuals** who want to understand how their daily lifestyle choices affect the environment and need an intelligent assistant to guide them toward lower-carbon habits.
 
----
+### Problem Statement
+- People often want to live more sustainably, but they lack a simple and practical way to measure how their everyday activities—such as commuting, electricity usage, food consumption, and shopping—contribute to their carbon footprint.
+- Most existing solutions either provide static calculators or generic advice. They do not adapt to the user’s behavior, provide contextual recommendations, or simulate long-term environmental impact in an engaging way.
 
-## 🚀 Local Development Setup
-
-### Prerequisites
-- **Node.js** v18.0.0 or higher
-- **NPM** v9.0.0 or higher
-
-### 1. Install Dependencies
-Run the command below from the **root directory** of the repository to install root, backend, and frontend packages simultaneously:
-```bash
-npm install
-```
-
-### 2. Set Up Environment Variables
-Navigate to the `backend/` directory, copy the `.env.example` file, and fill in your credentials:
-```bash
-cd backend
-cp .env.example .env
-```
-*(See the [Environment Configuration](#-environment-configuration) section below for variables details.)*
-
-### 3. Run the Development Servers
-From the root directory, launch both the Express backend and the React frontend development servers concurrently:
-```bash
-npm run dev
-```
-- **React Frontend Client:** running on [http://localhost:5173](http://localhost:5173)
-- **Express Backend API:** running on [http://localhost:5000](http://localhost:5000)
+### Solution
+- **EcoTwin AI** addresses this by acting as a dynamic carbon sustainability assistant. It builds a digital carbon twin of the user, analyzes carbon-heavy categories, provides AI-driven recommendations, and helps the user explore greener alternatives through simulations and future impact visualization.
 
 ---
 
-## 🌐 Environment Configuration
+# ✨ Key Features
 
-### Backend Environment Configuration (`backend/.env`)
+### 1) Digital Carbon Twin Dashboard
+- Tracks a user’s sustainability score and annual carbon forecast.
+- Breaks down emissions into categories such as **Transport**, **Energy**, **Diet**, and **Shopping**.
+- Creates a dynamic “carbon twin” profile representing the user’s current environmental footprint.
 
-| Variable | Description | Default / Example |
-| :--- | :--- | :--- |
-| `PORT` | The port the backend server listens on. | `5000` |
-| `JWT_SECRET` | Secret key used for signing JSON Web Tokens. | *Provide a long secure random string* |
-| `GEMINI_API_KEY` | Google AI Gemini key to power EcoCoach chat, OCR, and CV scans. | *Your Google API Key* (If blank, fallbacks are active) |
-| `MONGO_URI` | MongoDB Connection string. | `mongodb+srv://...` (If blank, local JSON mode starts) |
-| `FRONTEND_URL` | Frontend URL for setting CORS headers. | `http://localhost:5173` |
-| `CORS_ORIGIN` | Allowed origin header value for API access. | `http://localhost:5173` |
+### 2) EcoCoach AI Chat
+- Personalized AI sustainability assistant powered by **Google Gemini**.
+- Uses the user’s footprint context to answer questions and suggest practical improvements.
+- Helps users understand which lifestyle changes can reduce emissions most effectively.
 
-### Frontend Environment Configuration (`frontend/.env`)
+### 3) OCR Receipt Scanner
+- Lets users upload utility, food, shopping, or fuel bills.
+- Extracts meaningful data from receipts using AI vision/OCR.
+- Converts scanned data into carbon-related activity records.
 
-| Variable | Description | Default / Example |
-| :--- | :--- | :--- |
-| `VITE_API_URL` | Endpoint base path for backend requests. | `http://localhost:5000` (Defaults to window origin if blank) |
+### 4) CV Carbon Analyzer
+- Accepts images of meals, vehicles, appliances, waste, or shopping items.
+- Estimates possible carbon impact from the uploaded image.
+- Suggests eco-friendly alternatives or lower-impact choices.
+
+### 5) Future Earth Mode
+- Simulates the long-term impact of current user habits.
+- Helps users visualize environmental outcomes 5, 10, or 20 years into the future.
+- Makes carbon impact more understandable and emotionally engaging.
+
+### 6) Scenario Impact Simulator
+- Lets users test “what-if” sustainability changes such as:
+  - Switching to EVs
+  - Reducing meat consumption
+  - Installing solar panels
+  - Lowering energy usage
+- Shows possible carbon savings and lifestyle impact.
+
+### 7) Challenges & XP
+- Gamifies sustainability improvement.
+- Includes progress tracking, XP rewards, streaks, and challenge-based engagement.
+
+### 8) Community Sustainability Heatmap
+- Supports community-driven sustainability actions and awareness.
+- Encourages environmental participation beyond individual tracking.
 
 ---
 
-## 📂 Folder Directory Structure
+# 🧠 Smart Assistant Logic
+
+A major focus of this project is not just carbon tracking, but building a smart, context-aware assistant.
+
+### How EcoTwin AI behaves like an assistant
+EcoTwin AI takes user-specific context and uses it to generate relevant guidance. It does this through the following logic:
+
+1. **Collects user lifestyle context:** The platform gathers information from:
+   - Dashboard inputs & granular carbon calculator entries
+   - Scanned receipts & image analysis
+   - Previous footprint records & simulation choices
+2. **Identifies high-emission categories:** The system evaluates which areas contribute the most to the user’s footprint, such as:
+   - High transport emissions
+   - Heavy electricity usage
+   - Carbon-intensive food habits
+   - Frequent shopping-related impact
+3. **Applies personalized assistant reasoning:** Based on the detected patterns, the assistant provides contextual guidance such as:
+   - Transport reduction strategies if commute emissions are high.
+   - Electricity-saving suggestions if energy usage dominates.
+   - Food habit improvements if diet emissions are significant.
+   - Behavior change ideas if shopping waste is high.
+4. **Supports decision-making through simulation:** Instead of only showing current emissions, the system allows users to test alternative behaviors and compare impact before making real-life changes.
+5. **Makes sustainability more actionable:** The assistant turns abstract environmental data into actionable recommendations, future impact visualizations, goal-oriented suggestions, and progress-based motivation through gamification.
+
+> [!NOTE]
+> This directly aligns with the hackathon goal of building a smart, dynamic assistant that makes logical decisions based on user context.
+
+---
+
+# ⚙️ Tech Stack
+
+- **Frontend:** React.js, Vite, JavaScript, CSS3
+- **Backend:** Node.js, Express.js
+- **AI Integration:** Google Gemini API
+- **Authentication & Security:** JWT (JSON Web Tokens), bcrypt, Helmet, express-rate-limit
+- **Data Layer:** MongoDB support (when configured), Local JSON fallback storage for offline / lightweight usage.
+
+---
+
+# 🏗️ Architecture Overview
+
+EcoTwin AI follows a full-stack architecture:
+
+- **Frontend:** Handles dashboard UI, data entry, simulation screens, AI interaction views, and visualization of footprint data.
+- **Backend API:** Handles authentication, carbon activity processing, assistant routing, OCR / CV requests, and simulation and scoring logic.
+- **AI Layer:** Used for EcoCoach AI responses, OCR interpretation, CV carbon analysis, and sustainability recommendations.
+- **Data Storage Layer:** Stores user profiles, footprint logs, sustainability progress, activity records, and assistant-related data.
+
+---
+
+# 🔄 How the System Works
+
+* **Step 1 — User logs in or creates an account:** The user enters the platform and creates a sustainability profile.
+* **Step 2 — User provides lifestyle input:** The user can enter carbon-related activity data manually, use the granular calculator, scan receipts, or upload images for analysis.
+* **Step 3 — System calculates footprint:** The platform processes the data and estimates category-wise carbon impact.
+* **Step 4 — Dashboard visualizes the result:** The user sees their sustainability score, annual forecast, category emission breakdown, and target comparison.
+* **Step 5 — AI assistant gives contextual guidance:** EcoCoach AI uses the user’s data to provide personalized recommendations and answers.
+* **Step 6 — User explores simulations and future impact:** The user can test sustainable choices and view projected outcomes through simulations and Future Earth Mode.
+
+---
+
+# 📂 Project Structure
 
 ```text
 carbon-tracker/
-├── package.json               # Monorepo scripts (concurrently dev commands)
-├── package-lock.json
-├── backend/                   # Node.js + Express API Service
+├── package.json
+├── backend/
 │   ├── package.json
-│   ├── server.js              # Server entry point, middleware registration
-│   ├── database.js            # DB Interface (MongoDB models + local JSON IO fallback engine)
-│   ├── data/                  # Local JSON databases (created dynamically when offline)
+│   ├── server.js
+│   ├── database.js
+│   ├── data/
 │   ├── middleware/
-│   │   └── auth.js            # JWT verification middleware
+│   │   └── auth.js
 │   └── routes/
-│       ├── auth.js            # Signup, Login, and profile verification routes
-│       ├── tracking.js        # Sliders footprint tracking, travel log ledgers
-│       ├── chat.js            # EcoCoach AI Chatbot conversation endpoints
-│       ├── ai.js              # OCR Scanning, CV Analyzer, Digital Twin, Future Earth Mode
-│       ├── gamification.js    # Challenges, streaks, badges, leaderboard scores
-│       └── community.js       # Heatmap nodes, tree planting activities, waste reports
-└── frontend/                  # React + Vite Client Application
+│       ├── auth.js
+│       ├── tracking.js
+│       ├── chat.js
+│       ├── ai.js
+│       ├── gamification.js
+│       └── community.js
+└── frontend/
     ├── package.json
     ├── vite.config.js
     ├── index.html
     └── src/
-        ├── main.jsx           # App entry point
-        ├── App.jsx            # Core dashboard layout, sub-views, and API controllers
-        ├── App.css            # Layout CSS overlays
-        ├── index.css          # Main styling tokens (Dark mode theme, CSS animations)
+        ├── main.jsx
+        ├── App.jsx
+        ├── App.css
+        ├── index.css
         └── components/
-            └── Chart.jsx      # Custom SVG Donut & Bar chart components
+            └── Chart.jsx
 ```
 
 ---
 
-## ☁️ Production Deployment Guide
+# 🗄️ Database Strategy
 
-### Option A: Unified Monolithic Deployment (Recommended)
-Host both the static frontend bundle and the Node.js API from a single server (e.g., Render, Railway, Heroku).
-
-1. Define the following configurations on your host provider:
-   - **Build Command:** `npm install && npm run build`
-   - **Start Command:** `npm run start:backend`
-2. Environment Variables:
-   - `NODE_ENV=production`
-   - `PORT=5000` (or host dynamic port)
-   - `JWT_SECRET=your_production_secure_signing_token`
-   - `GEMINI_API_KEY=your_gemini_api_cascade_key`
-   - `MONGO_URI=your_production_mongodb_connection_uri`
-
-### Option B: Decoupled Deployments (Static Client + API Server)
-Host the React client on CDN providers (Vercel, Netlify) and the backend API on a separate virtual machine.
-
-#### 1. API Backend Setup (e.g. Render / Railway)
-- **Build Command:** `npm install`
-- **Start Command:** `node server.js`
-- Set `FRONTEND_URL` and `CORS_ORIGIN` to match your deployed Vercel domain.
-
-#### 2. Static Frontend Setup (e.g. Vercel / Netlify)
-- **Root directory:** `frontend`
-- **Build Command:** `npm run build`
-- **Output directory:** `dist`
-- Environment Variables: Set `VITE_API_URL` to your backend API's server URL (e.g. `https://api.your-app.com`).
+EcoTwin AI supports a flexible data storage model:
+- **MongoDB Mode:** If a valid MongoDB connection string is provided, the backend uses MongoDB for persistent, production-ready storage.
+- **Local JSON Fallback:** If MongoDB is not configured, the project falls back to local JSON files stored inside the backend data directory. This makes the project easier to run locally and useful for lightweight testing.
 
 ---
 
-## 🔒 Security & Rate-Limiting Policies
+# 🚀 Local Setup
 
-To ensure platform resilience and safeguard external AI usage, the following measures are integrated:
-- **Header Hardening:** Express utilizes `helmet` to lock down browsers against Clickjacking and XSS.
-- **CORS Constraints:** Strictly configures allowed origins, with active sanitizer routines stripping trailing slashes from environmental hosts to avoid double-slash 404 connection glitches.
-- **Multilayered Throttling:** Utilizes `express-rate-limit` engines to separate endpoints:
-  - Auth limits: Restricts register/login requests.
-  - Global endpoints: Prevents high-frequency API calls.
-  - AI endpoints: Protects the Gemini key from rapid scraping loops.
+### Prerequisites
+- Node.js v18+
+- npm
+
+### Installation
+From the root of the repository:
+```bash
+npm install
+```
+
+### Environment Setup
+Inside the `backend` folder, create a `.env` file based on `.env.example`.
+```env
+PORT=5000
+JWT_SECRET=your_jwt_secret
+GEMINI_API_KEY=your_gemini_api_key
+MONGO_URI=your_mongodb_uri
+FRONTEND_URL=http://localhost:5173
+CORS_ORIGIN=http://localhost:5173
+```
+
+Frontend environment (`frontend/.env`):
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+### Run the Project
+From the root folder:
+```bash
+npm run dev
+```
+- **Frontend runs on:** [http://localhost:5173](http://localhost:5173)
+- **Backend runs on:** [http://localhost:5000](http://localhost:5000)
 
 ---
 
-## 📄 License
+# 🔐 Security Considerations
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+The project includes several security-focused measures:
+- JWT-based authentication
+- Password hashing using bcrypt
+- Helmet for safer HTTP headers
+- Rate limiting to protect auth and AI endpoints
+- Controlled CORS configuration
+- Fallback behavior when AI services are unavailable
+
+---
+
+# 🧪 Assumptions Made
+
+- Carbon impact values are estimated based on predefined rules, category logic, and AI-assisted interpretation.
+- OCR and CV results are treated as supporting sustainability estimates, not perfect environmental measurements.
+- Future Earth Mode is intended as an awareness and projection feature rather than a scientific climate prediction engine.
+- AI recommendations are designed to be practical guidance, not legal, medical, or certified environmental advice.
+
+---
+
+# 🎯 Why This Project Fits the Hackathon
+
+This project is aligned with the challenge requirements because it demonstrates:
+- **Smart, dynamic assistant behavior:** EcoTwin AI does more than calculate emissions—it analyzes user context and responds with personalized sustainability guidance.
+- **Logical decision-making:** The system identifies major carbon contributors and tailors recommendations based on user-specific activity patterns.
+- **Real-world usability:** Carbon tracking, receipt scanning, future simulations, and guided recommendations address a practical everyday problem.
+- **Maintainable code structure:** The project uses a structured full-stack architecture with separated frontend, backend, middleware, and route layers.
+- **Security and accessibility awareness:** The platform includes authentication, request protection, and a user-friendly dashboard approach designed for understandable sustainability insights.
+
+---
+
+# 🔮 Future Improvements
+
+- More accurate region-based emission factor datasets.
+- Stronger personalized recommendation ranking.
+- Richer community sustainability analytics.
+- Improved OCR extraction pipelines.
+- Mobile-first optimization.
+- Deeper carbon budgeting and target planning tools.
+
+---
+
+# 📄 License
+
+This project is licensed under the MIT License.
