@@ -57,6 +57,8 @@ EcoTwin AI is a premium, full-stack, gamified carbon tracking and simulation pla
 
 ## 🛠️ Tech Stack & Monorepo Architecture
 
+![EcoTwin AI Tech Stack](assets/tech_stack.jpg)
+
 The project is structured as an **NPM Workspace monorepo** to orchestrate dependencies easily across services:
 
 - **Root Monorepo Manager:** Package workspace management via NPM.
