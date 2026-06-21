@@ -269,3 +269,14 @@ This project is aligned with the challenge requirements because it demonstrates:
 - Mobile-first optimization.
 - Deeper carbon budgeting and target planning tools.
 
+---
+
+# 👨💻 Author
+
+**Maharshi Dihora**  
+Developer of **EcoTwin AI – Digital Carbon Twin & AI-Powered Sustainability Assistant**  
+B.Tech Computer Science Engineering Student  
+
+- GitHub: https://github.com/MaharshiMD
+- LinkedIn: https://www.linkedin.com/in/maharshi-dihora
+
