@@ -587,10 +587,12 @@ router.post('/ocr', authMiddleware, async (req, res) => {
   const apiKey = process.env.GEMINI_API_KEY;
   let textResult = '';
 
-  // If Gemini API Key is available and a real image is sent, analyze it
-  if (apiKey && apiKey.trim() !== '' && base64Image) {
+  // If Gemini API Key is available, process it
+  if (apiKey && apiKey.trim() !== '' && apiKey !== 'YOUR_GEMINI_API_KEY') {
     try {
-      const prompt = `
+      if (base64Image) {
+        // Real image OCR scan
+        const prompt = `
 Analyze this receipt/bill image. Identify:
 1. The type of bill (Fuel, Electricity, Food, Shopping).
 2. The primary quantity value (e.g. Litres of fuel, kWh electricity, meat meals count, clothing items).
@@ -598,12 +600,30 @@ Analyze this receipt/bill image. Identify:
 Respond ONLY in JSON format like this:
 { "type": "Electricity", "quantity": 180, "unit": "kWh", "cost": 45.50, "items": ["Grid Electricity Billing"] }
 `;
-      const cascadeResult = await callGeminiCascade(apiKey, {
-        prompt,
-        base64Image,
-        mimeType: 'image/png'
-      });
-      textResult = cascadeResult.text;
+        const cascadeResult = await callGeminiCascade(apiKey, {
+          prompt,
+          base64Image,
+          mimeType: 'image/png'
+        });
+        textResult = cascadeResult.text;
+      } else {
+        // Dynamic simulated scan using Gemini
+        const prompt = `
+Generate a realistic JSON bill data representing a real random receipt of type "${receiptType}".
+Create realistic item names, a realistic total monetary cost, and a realistic quantity (e.g. litres of fuel, kWh of electricity, meat meals count, shopping apparel pieces).
+Respond strictly in JSON format matching this schema:
+{
+  "type": "${receiptType}",
+  "quantity": 150,
+  "unit": "kWh",
+  "cost": 35.00,
+  "items": ["Residential Power Bill"]
+}
+Respond with ONLY valid JSON, do not include markdown blocks.
+`;
+        const cascadeResult = await callGeminiCascade(apiKey, { prompt });
+        textResult = cascadeResult.text;
+      }
     } catch (e) {
       console.error("Gemini OCR error, falling back to mock parser:", e.message);
     }
@@ -675,19 +695,37 @@ router.post('/vision', authMiddleware, async (req, res) => {
   const apiKey = process.env.GEMINI_API_KEY;
   let textResult = '';
 
-  if (apiKey && apiKey.trim() !== '' && base64Image) {
+  if (apiKey && apiKey.trim() !== '' && apiKey !== 'YOUR_GEMINI_API_KEY') {
     try {
-      const prompt = `
+      if (base64Image) {
+        const prompt = `
 Analyze this picture of an item (${itemCategory}). Identify what object/meal/appliance it is, estimate its lifecycle carbon emissions impact (in kg CO2), and suggest a green alternative.
 Respond strictly in JSON format:
 { "identifiedObject": "Object Name", "carbonImpactKg": 12.5, "alternative": "Green Alternative Suggestion", "confidenceScore": 92 }
 `;
-      const cascadeResult = await callGeminiCascade(apiKey, {
-        prompt,
-        base64Image,
-        mimeType: 'image/png'
-      });
-      textResult = cascadeResult.text;
+        const cascadeResult = await callGeminiCascade(apiKey, {
+          prompt,
+          base64Image,
+          mimeType: 'image/png'
+        });
+        textResult = cascadeResult.text;
+      } else {
+        // Dynamic simulated object scan using Gemini
+        const prompt = `
+Generate a realistic lifecycle carbon footprint analysis for a random item in the category "${itemCategory}".
+Identify a realistic specific item, estimate its lifecycle carbon emissions impact (in kg CO2), suggest a green alternative, and provide a confidence score (from 80 to 99).
+Respond strictly in JSON format matching this schema:
+{
+  "identifiedObject": "Appliance Name",
+  "carbonImpactKg": 75.0,
+  "alternative": "Energy Star alternative",
+  "confidenceScore": 95
+}
+Respond with ONLY valid JSON, do not include markdown blocks.
+`;
+        const cascadeResult = await callGeminiCascade(apiKey, { prompt });
+        textResult = cascadeResult.text;
+      }
     } catch (e) {
       console.error("Gemini CV error, using mock parser:", e.message);
     }
@@ -745,18 +783,41 @@ router.get('/twin', authMiddleware, async (req, res) => {
     let avatarState = 'healthy_green';
     let summaryText = '';
     
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (apiKey && apiKey.trim() !== '' && apiKey !== 'YOUR_GEMINI_API_KEY') {
+      try {
+        const prompt = `
+Generate a narrative description (2 sentences) of a digital carbon twin environment representing a user named "${req.user.name}" with an annual carbon footprint of ${profile.predictedYearly} tonnes CO₂/year.
+Describe the visual state of their twin environment (e.g., smog levels, tree coverage, clean energy usage, river clarity) based on this footprint.
+Respond in plain text without markdown or wrapping quotes.
+`;
+        const cascadeResult = await callGeminiCascade(apiKey, { prompt });
+        summaryText = cascadeResult.text.trim();
+      } catch (e) {
+        console.error("Gemini twin profile summary error:", e.message);
+      }
+    }
+
+    if (!summaryText) {
+      if (profile.predictedYearly < 2.0) {
+        summaryText = 'Your EcoTwin is thriving in a lush, biodiverse sanctuary. Canopy cover is thick and energy is fully renewable.';
+      } else if (profile.predictedYearly < 5.0) {
+        summaryText = 'Your EcoTwin has moderate clean air and energy, but small pockets of carbon stress exist in transit nodes.';
+      } else if (profile.predictedYearly < 10.0) {
+        summaryText = 'Your EcoTwin is showing signs of carbon haze. The sky has a faint smoggy tint, and water reserves are dropping.';
+      } else {
+        summaryText = 'Your EcoTwin is in severe distress. Factory smog blankets the city, forest coverage is dry, and waste heaps are high.';
+      }
+    }
+
     if (profile.predictedYearly < 2.0) {
       avatarState = 'lush_oasis';
-      summaryText = 'Your EcoTwin is thriving in a lush, biodiverse sanctuary. Canopy cover is thick and energy is fully renewable.';
     } else if (profile.predictedYearly < 5.0) {
       avatarState = 'healthy_green';
-      summaryText = 'Your EcoTwin has moderate clean air and energy, but small pockets of carbon stress exist in transit nodes.';
     } else if (profile.predictedYearly < 10.0) {
       avatarState = 'carbon_stressed';
-      summaryText = 'Your EcoTwin is showing signs of carbon haze. The sky has a faint smoggy tint, and water reserves are dropping.';
     } else {
       avatarState = 'smoggy_industrial';
-      summaryText = 'Your EcoTwin is in severe distress. Factory smog blankets the city, forest coverage is dry, and waste heaps are high.';
     }
 
     res.json({

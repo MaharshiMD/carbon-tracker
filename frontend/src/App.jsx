@@ -505,6 +505,9 @@ export default function App() {
         body: JSON.stringify({
           message: q,
           carbonProfile,
+          sliders,
+          breakdown,
+          totalCo2,
           history: [...apiHistory, { role: 'user', content: q }]
         })
       });
@@ -512,10 +515,10 @@ export default function App() {
       if (res.ok && data.response) {
         setChatMessages(prev => [...prev, { sender: 'ai', text: data.response }]);
       } else {
-        setChatMessages(prev => [...prev, { sender: 'ai', text: `<p>EcoCoach is temporarily unavailable. Please try again.</p>` }]);
+        setChatMessages(prev => [...prev, { sender: 'ai', text: `<p>Advanced analysis is temporarily unavailable. Based on your available data, here are some recommendations.</p><p>Please review your energy and transit levels on the dashboard or try again in a few moments.</p>` }]);
       }
     } catch (err) {
-      setChatMessages(prev => [...prev, { sender: 'ai', text: `<p>EcoCoach is temporarily unavailable. Please try again.</p>` }]);
+      setChatMessages(prev => [...prev, { sender: 'ai', text: `<p>Advanced analysis is temporarily unavailable. Based on your available data, here are some recommendations.</p><p>Please check your network connection and try again.</p>` }]);
     } finally {
       setAiLoading(false);
     }
